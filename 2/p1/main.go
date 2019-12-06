@@ -15,7 +15,7 @@ const (
 )
 
 func main() {
-	program := day2.GetInputProgram()
+	program := day2.GetInputProgram(12, 2)
 	runProgram(program)
 
 	fmt.Printf("Position 0 is %d\n", program[0])
