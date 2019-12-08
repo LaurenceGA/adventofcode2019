@@ -35,15 +35,6 @@ func main() {
 	start := time.Now()
 
 	max := getMaxAmplifierSignal(day7.GetInputProgram())
-	// max := runAmplifier(day7.ProcessInput("3,15,3,16,1002,16,10,16,1,16,15,15,4,15,99,0,0"), amplifierInput{
-	// 	a: 4,
-	// 	b: 4,
-	// 	c: 4,
-	// 	d: 4,
-	// 	e: 4,
-	// })
-
-	// max := getMaxAmplifierSignal(day7.ProcessInput("3,15,3,16,1002,16,10,16,1,16,15,15,4,15,99,0,0"))
 
 	fmt.Println("Max signial is:", max)
 
