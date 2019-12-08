@@ -9,6 +9,13 @@ const inputFile = "8/input.sif"
 // Pixel represents a colour
 type Pixel byte
 
+// Colours!
+const (
+	Black       Pixel = '0'
+	White       Pixel = '1'
+	Transparent Pixel = '2'
+)
+
 func (p Pixel) String() string {
 	return string(p)
 }
