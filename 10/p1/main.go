@@ -43,29 +43,32 @@ func main() {
 }
 
 func detectableAsteroids(asteroidMap [][]rune, pos coord) int {
+	//printMap(asteroidMap)
 	others := otherAsteroids(asteroidMap, pos)
+	var detectableAsteroids []coord
 
 	sum := 0
 	for _, o := range others {
 		if canSee(pos, o, asteroidMap) {
+			detectableAsteroids = append(detectableAsteroids, o)
 			sum++
 		}
 	}
+
+	fmt.Println()
+	printMap(generateDetectionMap(asteroidMap, detectableAsteroids, pos))
 
 	return sum
 }
 
 func canSee(a, b coord, asteroidMap [][]rune) bool {
-	// fmt.Printf("Can %v see %v?\n", a, b)
 	between := coordsBetween(a, b)
 	for _, possibleInterceptor := range between {
 		if possibleInterceptor != b && asteroidMap[possibleInterceptor.Y][possibleInterceptor.X] == asteroid {
-			// fmt.Println("-1")
 			return false
 		}
 	}
 
-	// fmt.Println("+1")
 	return true
 }
 
@@ -102,43 +105,13 @@ func coordsBetween(a, b coord) []coord {
 
 // Does c lie on the line between a and b?
 func liesBetween(a, b, c coord) bool {
-	// fmt.Printf("Does %v lie between %v and %v\n", c, a, b)
-	slope, intercept, err := getLine(a, b)
+	threshold := 0.000001
+	distSumDiff := (distance(a, c) + distance(c, b)) - distance(a, b)
+	return -threshold < distSumDiff && distSumDiff < threshold
+}
 
-	var onLine bool
-	if err != nil {
-		onLine = c.X == a.X
-	} else {
-		onLine = math.Abs(float64(c.Y)-slope*float64(c.X)+intercept) < 0.00000000000000000000001
-	}
-
-	// fmt.Println(slope, intercept, err, onLine)
-
-	if b.X > a.X {
-		if c.X > b.X || c.X < a.X {
-			return false
-		}
-	}
-
-	if b.X < a.X {
-		if c.X < b.X || c.X > a.X {
-			return false
-		}
-	}
-
-	if b.Y > a.Y {
-		if c.Y > b.Y || c.Y < a.Y {
-			return false
-		}
-	}
-
-	if b.Y < a.Y {
-		if c.Y < b.Y || c.Y > a.Y {
-			return false
-		}
-	}
-
-	return onLine
+func distance(a, b coord) float64 {
+	return math.Sqrt(math.Pow(float64(a.X-b.X), 2) + math.Pow(float64(a.Y-b.Y), 2))
 }
 
 func getLine(a, b coord) (slope, intercept float64, err error) {
@@ -155,10 +128,6 @@ func otherAsteroids(asteroidMap [][]rune, pos coord) []coord {
 	var asteroids []coord
 	for y, row := range asteroidMap {
 		for x, ast := range row {
-			// if x == 11 && y == 16 {
-			// 	fmt.Println(x, y, pos, ast, asteroid)
-			// 	fmt.Println(row)
-			// }
 			if ast == asteroid && !(x == pos.X && y == pos.Y) {
 				asteroids = append(asteroids, coord{X: x, Y: y})
 			}
@@ -166,4 +135,30 @@ func otherAsteroids(asteroidMap [][]rune, pos coord) []coord {
 	}
 
 	return asteroids
+}
+
+func printMap(asteroidMap [][]rune) {
+	for _, row := range asteroidMap {
+		for _, ast := range row {
+			fmt.Print(string(ast))
+		}
+		fmt.Println()
+	}
+}
+
+func generateDetectionMap(originalMap [][]rune, detectables []coord, pos coord) [][]rune {
+	newMap := make([][]rune, len(originalMap))
+	for i := range newMap {
+		newMap[i] = make([]rune, len(originalMap[i]))
+		for j := range newMap[i] {
+			newMap[i][j] = empty
+		}
+	}
+	for _, obj := range detectables {
+		newMap[obj.Y][obj.X] = asteroid
+	}
+
+	newMap[pos.Y][pos.X] = 'X'
+
+	return newMap
 }

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"strconv"
 	"testing"
 
 	day10 "github.com/LaurenceGA/adventofcode2019/10"
@@ -201,13 +202,13 @@ func TestGetLine(t *testing.T) {
 			t.Errorf("Expected intercept %f, got %f", tt.intercept, intercept)
 		}
 		if (err != nil) != tt.err {
-			t.Errorf("Expected err %v, got %v", tt.err, (err != nil))
+			t.Errorf("Expected err %v, got %v", tt.err, err != nil)
 		}
 	}
 }
 
 func TestLiesBetween(t *testing.T) {
-	for _, tt := range []struct {
+	for i, tt := range []struct {
 		a, b, c  coord
 		expected bool
 	}{
@@ -247,10 +248,18 @@ func TestLiesBetween(t *testing.T) {
 			c:        coord{X: 3, Y: 1},
 			expected: false,
 		},
+		{
+			a:        coord{X: 1, Y: 0},
+			b:        coord{X: 4, Y: 3},
+			c:        coord{X: 3, Y: 2},
+			expected: true,
+		},
 	} {
-		between := liesBetween(tt.a, tt.b, tt.c)
-		if between != tt.expected {
-			t.Errorf("Expected between=%v, got %v", tt.expected, between)
-		}
+		t.Run(strconv.Itoa(i), func(t *testing.T) {
+			between := liesBetween(tt.a, tt.b, tt.c)
+			if between != tt.expected {
+				t.Errorf("Expected between=%v, got %v", tt.expected, between)
+			}
+		})
 	}
 }
