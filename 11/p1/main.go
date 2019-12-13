@@ -132,11 +132,8 @@ func (i *Intcode) add(paramModes []parameterMode) {
 	var (
 		in1Val = i.getParameterValue(in1, paramModes[0])
 		in2Val = i.getParameterValue(in2, paramModes[1])
-		outVal = i.getParameterValue(out, paramModes[2])
+		outVal = i.getAddressParameterValue(out, paramModes[2])
 	)
-	if paramModes[2] == relative {
-		outVal = i.relativeBase + out
-	}
 
 	if i.debug {
 		fmt.Printf("ADD %d(%s)=%d %d(%s)=%d -> %d(%s)=%d\n",
@@ -166,11 +163,8 @@ func (i *Intcode) multiply(paramModes []parameterMode) {
 	var (
 		in1Val = i.getParameterValue(in1, paramModes[0])
 		in2Val = i.getParameterValue(in2, paramModes[1])
-		outVal = i.getParameterValue(out, paramModes[2])
+		outVal = i.getAddressParameterValue(out, paramModes[2])
 	)
-	if paramModes[2] == relative {
-		outVal = i.relativeBase + out
-	}
 
 	if i.debug {
 		fmt.Printf("MUL %d(%s)=%d %d(%s)=%d -> %d(%s)=%d \n",
@@ -192,10 +186,7 @@ func (i *Intcode) multiply(paramModes []parameterMode) {
 
 func (i *Intcode) in(paramModes []parameterMode) {
 	var out = i.prog[i.instructionPointer+1]
-	var outVal = i.getParameterValue(out, paramModes[0])
-	if paramModes[0] == relative {
-		outVal = i.relativeBase + out
-	}
+	var outVal = i.getAddressParameterValue(out, paramModes[0])
 
 	in := <-i.input
 	i.prog[outVal] = in
@@ -288,11 +279,8 @@ func (i *Intcode) lessThan(paramModes []parameterMode) {
 	var (
 		in1Val = i.getParameterValue(in1, paramModes[0])
 		in2Val = i.getParameterValue(in2, paramModes[1])
-		outVal = i.getParameterValue(out, paramModes[2])
+		outVal = i.getAddressParameterValue(out, paramModes[2])
 	)
-	if paramModes[2] == relative {
-		outVal = i.relativeBase + out
-	}
 
 	if i.debug {
 		fmt.Printf("LT %d(%s)=%d %d(%s)=%d -> %d(%s)=%d\n",
@@ -327,11 +315,8 @@ func (i *Intcode) equals(paramModes []parameterMode) {
 	var (
 		in1Val = i.getParameterValue(in1, paramModes[0])
 		in2Val = i.getParameterValue(in2, paramModes[1])
-		outVal = i.getParameterValue(out, paramModes[2])
+		outVal = i.getAddressParameterValue(out, paramModes[2])
 	)
-	if paramModes[2] == relative {
-		outVal = i.relativeBase + out
-	}
 
 	if i.debug {
 		fmt.Printf("EQ %d(%s)=%d %d(%s)=%d -> %d(%s)=%d\n",
@@ -388,12 +373,12 @@ func (i *Intcode) getParameterValue(parameter int, mode parameterMode) int {
 
 func (i *Intcode) getAddressParameterValue(parameter int, mode parameterMode) int {
 	switch mode {
+	case position:
+		fallthrough
 	case immediate:
 		return parameter
-	case position:
-		return i.prog[parameter]
 	case relative:
-		return i.relativeBase+parameter
+		return i.relativeBase + parameter
 	default:
 		panic(fmt.Sprintf("Unknown parameter mode '%d'", mode))
 	}
