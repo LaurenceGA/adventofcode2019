@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"math"
+	"time"
 
 	day11 "github.com/LaurenceGA/adventofcode2019/11"
 )
@@ -31,19 +32,134 @@ const (
 )
 
 func main() {
+	start := time.Now()
+
 	program := day11.GetInputProgram()
 
-	inputChannel := make(chan int, 1)
-	inputChannel <- 2
-	close(inputChannel)
+	painter := NewHullPainter(program)
+	painter.Run()
 
-	outputChannel := make(chan int)
+	fmt.Println(painter.NumPaints())
 
-	comp := NewComputer(program, inputChannel, outputChannel)
-	go comp.Run()
+	fmt.Println("Time elapsed:", time.Since(start))
+}
 
-	for i := range outputChannel {
-		fmt.Printf(">>>>%d<<<<\n", i)
+type direction int
+
+const (
+	up direction = iota
+	right
+	down
+	left
+)
+
+type directionInstruction int
+
+const (
+	turnLeft  directionInstruction = 0
+	turnRight directionInstruction = 1
+)
+
+type panelColour int
+
+const (
+	black panelColour = 0
+	white panelColour = 1
+)
+
+type coord struct {
+	X, Y int
+}
+
+type panel struct {
+	coord
+	colour panelColour
+}
+
+// HullPainter is a robot that paints your hull
+type HullPainter struct {
+	comp             *Intcode
+	compInput        chan int
+	compOutput       chan int
+	currentDirection direction
+	curPos           coord
+	paints           []panel
+}
+
+// NewHullPainter creates a new hull painting robot
+func NewHullPainter(prog []int) *HullPainter {
+	in := make(chan int)
+	out := make(chan int)
+	return &HullPainter{
+		comp:             NewComputer(prog, in, out),
+		compInput:        in,
+		compOutput:       out,
+		currentDirection: up,
+		curPos:           coord{X: 0, Y: 0},
+	}
+}
+
+// NumPaints number of unique paints made
+func (hp *HullPainter) NumPaints() int {
+	paintsMap := make(map[coord]struct{})
+	for _, panel := range hp.paints {
+		paintsMap[panel.coord] = struct{}{}
+	}
+
+	fmt.Println(hp.paints)
+
+	return len(paintsMap)
+}
+
+func (hp *HullPainter) colourAt(pos coord) panelColour {
+	for i := len(hp.paints) - 1; i >= 0; i-- {
+		if hp.paints[i].coord == pos {
+			return hp.paints[i].colour
+		}
+	}
+
+	return black
+}
+
+// Run begins the painter's brain
+func (hp *HullPainter) Run() {
+	go hp.comp.Run()
+
+	hp.process()
+}
+
+func (hp *HullPainter) process() {
+	for {
+		fmt.Println("Cur colour", int(hp.colourAt(hp.curPos)))
+
+		select {
+		case hp.compInput <- int(hp.colourAt(hp.curPos)):
+
+		case <-hp.comp.done:
+			return
+		}
+
+		paintColour := <-hp.compOutput
+		moveDirection := <-hp.compOutput
+		fmt.Println("Instruction:", paintColour, moveDirection)
+
+		hp.paints = append(hp.paints, panel{coord: hp.curPos, colour: panelColour(paintColour)})
+		if directionInstruction(moveDirection) == turnLeft {
+			hp.currentDirection = (hp.currentDirection - 1) % 4
+		} else {
+			hp.currentDirection = (hp.currentDirection + 1) % 4
+		}
+
+		switch hp.currentDirection {
+		case up:
+			hp.curPos.Y--
+		case right:
+			hp.curPos.X++
+		case down:
+			hp.curPos.Y++
+		case left:
+			hp.curPos.X--
+		}
 	}
 }
 
@@ -57,6 +173,8 @@ type Intcode struct {
 	relativeBase       int
 
 	debug bool
+
+	done chan struct{}
 }
 
 // NewComputer creates a new Intcode computer
@@ -67,6 +185,8 @@ func NewComputer(prog []int, input <-chan int, output chan<- int) *Intcode {
 		output: output,
 
 		debug: false,
+
+		done: make(chan struct{}),
 	}
 }
 
@@ -93,6 +213,9 @@ func (i *Intcode) Run() {
 				fmt.Println("HALT")
 				fmt.Println(i.prog)
 			}
+
+			i.done <- struct{}{}
+			close(i.done)
 
 			return
 		case add:
