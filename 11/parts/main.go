@@ -106,9 +106,62 @@ func (hp *HullPainter) NumPaints() int {
 		paintsMap[panel.coord] = struct{}{}
 	}
 
-	fmt.Println(hp.paints)
-
 	return len(paintsMap)
+}
+
+func (hp *HullPainter) printMap() {
+	lowX, highX, lowY, highY := hp.getBounds()
+	for y := lowY; y <= highY; y++ {
+		for x := lowX; x <= highX; x++ {
+			if x == hp.curPos.X && y == hp.curPos.Y {
+				switch hp.currentDirection {
+				case up:
+					fmt.Print("^")
+				case down:
+					fmt.Print("V")
+				case left:
+					fmt.Print("<")
+				case right:
+					fmt.Print(">")
+				}
+			} else {
+				switch hp.colourAt(coord{X: x, Y: y}) {
+				case black:
+					fmt.Print(".")
+				case white:
+					fmt.Print("#")
+				default:
+					panic("Unknown colour!")
+				}
+			}
+		}
+		fmt.Println()
+	}
+}
+
+// lowX, highX, lowY, highY
+func (hp *HullPainter) getBounds() (lowX int, highX int, lowY int, highY int) {
+	for _, c := range hp.paints {
+		if c.X < lowX {
+			lowX = c.X
+		}
+		if c.X > highX {
+			highX = c.X
+		}
+		if c.Y < lowY {
+			lowY = c.Y
+		}
+		if c.Y > highY {
+			highY = c.Y
+		}
+	}
+
+	lowX--
+	highX++
+	lowY--
+	highY++
+
+	return
 }
 
 func (hp *HullPainter) colourAt(pos coord) panelColour {
@@ -125,31 +178,37 @@ func (hp *HullPainter) colourAt(pos coord) panelColour {
 func (hp *HullPainter) Run() {
 	go hp.comp.Run()
 
+	// Start on a single white pannel
+	hp.paints = append(hp.paints, panel{coord: coord{X: 0, Y: 0}, colour: white})
 	hp.process()
 }
 
 func (hp *HullPainter) process() {
 	for {
-		fmt.Println("Cur colour", int(hp.colourAt(hp.curPos)))
-
+		// time.Sleep(time.Millisecond * 200)
+		// hp.printMap()
 		select {
 		case hp.compInput <- int(hp.colourAt(hp.curPos)):
-
+			// fmt.Println("IN:", int(hp.colourAt(hp.curPos)))
 		case <-hp.comp.done:
+			fmt.Println("DONE")
+			hp.printMap()
 			return
 		}
 
 		paintColour := <-hp.compOutput
 		moveDirection := <-hp.compOutput
-		fmt.Println("Instruction:", paintColour, moveDirection)
+		// if panelColour(paintColour) == white {
+		// 	fmt.Println("PAINT: #")
+		// } else {
+		// 	fmt.Println("PAINT: .")
+		// }
 
 		hp.paints = append(hp.paints, panel{coord: hp.curPos, colour: panelColour(paintColour)})
-		if directionInstruction(moveDirection) == turnLeft {
-			hp.currentDirection = (hp.currentDirection - 1) % 4
-		} else {
-			hp.currentDirection = (hp.currentDirection + 1) % 4
-		}
 
+		hp.currentDirection = calculateDirection(hp.currentDirection, directionInstruction(moveDirection))
+
+		// fmt.Println("CurPos:", hp.curPos)
 		switch hp.currentDirection {
 		case up:
 			hp.curPos.Y--
@@ -160,6 +219,38 @@ func (hp *HullPainter) process() {
 		case left:
 			hp.curPos.X--
 		}
+
+		// fmt.Println("NewPos:", hp.curPos)
+	}
+}
+
+func calculateDirection(cur direction, change directionInstruction) direction {
+	newDir := cur
+	if change == turnLeft {
+		newDir--
+	} else {
+		newDir++
+	}
+
+	normalised := (newDir%4 + 4) % 4
+
+	// fmt.Printf("Turning left: %s -> %s\n", dirName(cur), dirName(normalised))
+
+	return normalised
+}
+
+func dirName(dir direction) string {
+	switch dir {
+	case up:
+		return "up"
+	case right:
+		return "right"
+	case down:
+		return "down"
+	case left:
+		return "left"
+	default:
+		panic(fmt.Sprintf("Unknown direction %d", dir))
 	}
 }
 
