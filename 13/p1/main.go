@@ -35,25 +35,49 @@ func main() {
 	start := time.Now()
 
 	program := day13.GetInputProgram()
-	_ = program
+
+	in := make(chan int)
+	out := make(chan int)
+	game := NewComputer(program, in, out)
+	go game.Run()
+
+	sum := 0
+	for {
+		select {
+		case posX := <-out:
+			posY := <-out
+			newTileID := <-out
+			fmt.Println(posX, posY, newTileID)
+			if tileID(newTileID) == block {
+				sum++
+			}
+		case <-game.done:
+			goto done
+		}
+	}
+done:
+	fmt.Println(sum)
 
 	fmt.Println("Time elapsed:", time.Since(start))
 }
 
-type panelColour int
+type tileID int
 
 const (
-	black panelColour = 0
-	white panelColour = 1
+	empty tileID = iota
+	wall
+	block
+	paddle
+	ball
 )
 
 type coord struct {
 	X, Y int
 }
 
-type panel struct {
+type tile struct {
 	coord
-	colour panelColour
+	tilekind tileID
 }
 
 // Intcode is an int code computer
