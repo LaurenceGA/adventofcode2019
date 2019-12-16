@@ -1,7 +1,7 @@
 package day14
 
 import (
-	"regexp"
+	"fmt"
 	"strconv"
 	"strings"
 )
@@ -83,39 +83,36 @@ func ProcessInput(in string) []Formula {
 	return formulae
 }
 
-var formulaRegex = regexp.MustCompile("^(?:(\\d*) ([A-Z]*))(?:, (\\d*) ([A-Z]*))* => (\\d*) ([A-Z]*)$")
-
 func toFormula(in string) Formula {
 	// 180 ORE => 9 DQFL
 	// 2 DLZS, 2 VCFX, 15 PDTP, 14 ZDWX, 35 NBZC, 20 JVMF, 1 BGWMS => 3 DWRH
-	matches := formulaRegex.FindStringSubmatch(in)
-	matches = matches[1:]
-	makes := matches[len(matches)-2:]
-	requires := matches[:len(matches)-2]
-	if len(requires) == 4 && requires[2] == "" && requires[3] == "" { // Grp 3 & 4 don't exist
-		requires = requires[:2]
-	}
-	makesAmount, err := strconv.Atoi(makes[0])
+	equation := strings.Split(in, "=>")
+	makes := strings.Trim(equation[1], " ")
+	requiresStrings := equation[0]
+	requires := strings.Split(requiresStrings, ",")
+	fmt.Println(requires, makes)
+	m := strings.Split(makes, " ")
+	makesAmount, err := strconv.Atoi(m[0])
 	if err != nil {
 		panic(err)
 	}
-
-	requiredIngredients := make([]Ingredient, 0, len(requires)/2)
-	for i := 0; i < len(requires); i += 2 {
-		requireAmount, err := strconv.Atoi(requires[i])
+	requiredIngredients := make([]Ingredient, 0, len(requires))
+	for _, rString := range requires {
+		r := strings.Split(strings.Trim(rString, " "), " ")
+		requireAmount, err := strconv.Atoi(r[0])
 		if err != nil {
 			panic(err)
 		}
 		requiredIngredients = append(requiredIngredients, Ingredient{
 			Amount: requireAmount,
-			Name:   requires[i+1],
+			Name:   r[1],
 		})
 	}
 
 	return Formula{
 		Makes: Ingredient{
 			Amount: makesAmount,
-			Name:   makes[1],
+			Name:   m[1],
 		},
 		Requires: requiredIngredients,
 	}

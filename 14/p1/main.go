@@ -17,7 +17,7 @@ func main() {
 	start := time.Now()
 
 	formulae := day14.GetInput()
-	fmt.Println(formulae)
+	fmt.Println(amountOfOreToProduceFuel(formulae))
 
 	fmt.Println("Time elapsed:", time.Since(start))
 }
