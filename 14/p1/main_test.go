@@ -19,6 +19,16 @@ func TestOreToFuel(t *testing.T) {
 7 A, 1 E => 1 FUEL`,
 			expectedOre: 31,
 		},
+		{
+			input: `9 ORE => 2 A
+8 ORE => 3 B
+7 ORE => 5 C
+3 A, 4 B => 1 AB
+5 B, 7 C => 1 BC
+4 C, 1 A => 1 CA
+2 AB, 3 BC, 4 CA => 1 FUEL`,
+			expectedOre: 165,
+		},
 	} {
 		t.Run(strconv.Itoa(i), func(t *testing.T) {
 			formulae := day14.ProcessInput(tt.input)

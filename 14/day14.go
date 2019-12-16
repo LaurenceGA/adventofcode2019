@@ -100,20 +100,20 @@ func toFormula(in string) Formula {
 		panic(err)
 	}
 
-	requiredIngredients := make([]ingredient, 0, len(requires)/2)
+	requiredIngredients := make([]Ingredient, 0, len(requires)/2)
 	for i := 0; i < len(requires); i += 2 {
 		requireAmount, err := strconv.Atoi(requires[i])
 		if err != nil {
 			panic(err)
 		}
-		requiredIngredients = append(requiredIngredients, ingredient{
+		requiredIngredients = append(requiredIngredients, Ingredient{
 			Amount: requireAmount,
 			Name:   requires[i+1],
 		})
 	}
 
 	return Formula{
-		Makes: ingredient{
+		Makes: Ingredient{
 			Amount: makesAmount,
 			Name:   makes[1],
 		},
@@ -121,13 +121,13 @@ func toFormula(in string) Formula {
 	}
 }
 
-type ingredient struct {
+type Ingredient struct {
 	Name   string
 	Amount int
 }
 
-// Formula shows how to make an ingredient
+// Formula shows how to make an Ingredient
 type Formula struct {
-	Makes    ingredient
-	Requires []ingredient
+	Makes    Ingredient
+	Requires []Ingredient
 }

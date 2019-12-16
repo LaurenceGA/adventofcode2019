@@ -28,33 +28,55 @@ func amountOfOreToProduceFuel(formulae []day14.Formula) int {
 		formulaMap[f.Makes.Name] = f
 	}
 
-	return oreToMakeSubstance(formulaMap, fuel, 1)
+	fmt.Println(formulae)
+
+	return oreToMakeSubstance(formulaMap, make(map[string]int), fuel, 1)
 }
 
-func oreToMakeSubstance(formulaMap map[string]day14.Formula, targetSubstance string, amountNeeded int) int {
-	fmt.Printf("Trying to make %d %s\n", amountNeeded, targetSubstance)
+func oreToMakeSubstance(formulaMap map[string]day14.Formula, excess map[string]int, targetSubstance string, amountNeeded int) int {
+	fmt.Printf("Calculating ORE to make %d %s\n", amountNeeded, targetSubstance)
 	if targetSubstance == ore {
-		fmt.Printf("Using %d ORE\n", amountNeeded)
+		//fmt.Printf("Using %d ORE\n", amountNeeded)
 		return amountNeeded
+	}
+
+	if _, ok := excess[targetSubstance]; !ok {
+		excess[targetSubstance] = 0
+	}
+
+	if excess[targetSubstance] >= amountNeeded {
+		fmt.Println("Enough in excess. Taking", amountNeeded)
+		excess[targetSubstance] -= amountNeeded
+		return 0
+	}
+
+	if excess[targetSubstance] > 0 {
+		fmt.Println("Excess present, using", excess[targetSubstance])
+		amountNeeded -= excess[targetSubstance]
+		excess[targetSubstance] = 0
+		fmt.Println("New desired", targetSubstance, "is", amountNeeded)
 	}
 
 	targetFormula := formulaMap[targetSubstance]
 	fmt.Println("Target formula:", targetFormula)
-	oreNeededForOneFormula := 0
-	for _, f := range targetFormula.Requires {
-		o := oreToMakeSubstance(formulaMap, f.Name, f.Amount)
-		oreNeededForOneFormula += o
-		// fmt.Printf("%d ore needed to make %s component of %s formula\n", o, f.Name, targetSubstance)
-	}
 
-	timeToUseFormula := int(math.Ceil(float64(amountNeeded) / float64(targetFormula.Makes.Amount)))
-	fmt.Printf("Want %d %s, formula makes %d -> using %d times = %d ORE\n",
+	timesToUseFormula := int(math.Ceil(float64(amountNeeded) / float64(targetFormula.Makes.Amount)))
+	fmt.Printf("Want %d %s, formula makes %d -> using %d times\n",
 		amountNeeded,
 		targetSubstance,
 		targetFormula.Makes.Amount,
-		timeToUseFormula,
-		oreNeededForOneFormula * timeToUseFormula,
+		timesToUseFormula,
 	)
 
-	return oreNeededForOneFormula * timeToUseFormula
+	oreNeededForOneFormula := 0
+	for _, f := range targetFormula.Requires {
+		oreNeededForOneFormula += oreToMakeSubstance(formulaMap, excess, f.Name, f.Amount*timesToUseFormula)
+	}
+
+	totalSubstanceBeingMade := timesToUseFormula * targetFormula.Makes.Amount
+
+	excess[targetSubstance] += totalSubstanceBeingMade - amountNeeded
+	fmt.Println("Excess:", excess)
+
+	return oreNeededForOneFormula
 }
