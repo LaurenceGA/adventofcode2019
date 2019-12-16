@@ -1,7 +1,6 @@
 package day14
 
 import (
-	"fmt"
 	"strconv"
 	"strings"
 )
@@ -90,7 +89,6 @@ func toFormula(in string) Formula {
 	makes := strings.Trim(equation[1], " ")
 	requiresStrings := equation[0]
 	requires := strings.Split(requiresStrings, ",")
-	fmt.Println(requires, makes)
 	m := strings.Split(makes, " ")
 	makesAmount, err := strconv.Atoi(m[0])
 	if err != nil {
