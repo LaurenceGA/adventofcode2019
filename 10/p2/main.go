@@ -36,6 +36,9 @@ func angleToStation(c coord) float64 {
 	p13 := distance(station, c)
 	p23 := distance(straightUpPoint, c)
 	angle := math.Acos((math.Pow(p12, 2) + math.Pow(p13, 2) - math.Pow(p23, 2)) / (2 * p12 * p13))
+	if c.X < station.X {
+		angle = 2*math.Pi - angle
+	}
 	return angle
 }
 
@@ -47,7 +50,7 @@ func main() {
 	sort.Sort(ByAngle(detectable))
 
 	fmt.Println(detectable)
-	goalCoord := detectable[200]
+	goalCoord := detectable[199]
 	fmt.Println(goalCoord)
 	fmt.Println(goalCoord.X*100 + goalCoord.Y)
 

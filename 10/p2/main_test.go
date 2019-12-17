@@ -1,6 +1,7 @@
 package main
 
 import (
+	"math"
 	"strconv"
 	"testing"
 
@@ -262,4 +263,56 @@ func TestLiesBetween(t *testing.T) {
 			}
 		})
 	}
+}
+
+// Station at (22,19)
+func TestAngleToStation(t *testing.T) {
+	for i, tt := range []struct {
+		c             coord
+		expectedAngle float64
+	}{
+		{
+			c:             coord{X: 22, Y: 17},
+			expectedAngle: 0,
+		},
+		{
+			c:             coord{X: 23, Y: 18},
+			expectedAngle: 45,
+		},
+		{
+			c:             coord{X: 23, Y: 19},
+			expectedAngle: 90,
+		},
+		{
+			c:             coord{X: 23, Y: 20},
+			expectedAngle: 135,
+		},
+		{
+			c:             coord{X: 22, Y: 30},
+			expectedAngle: 180,
+		},
+		{
+			c:             coord{X: 21, Y: 20},
+			expectedAngle: 225,
+		},
+		{
+			c:             coord{X: 21, Y: 19},
+			expectedAngle: 270,
+		},
+		{
+			c:             coord{X: 21, Y: 18},
+			expectedAngle: 315,
+		},
+	} {
+		t.Run(strconv.Itoa(i), func(t *testing.T) {
+			actualAngle := angleToStation(tt.c)
+			if math.Abs(radToDeg(actualAngle)-tt.expectedAngle) > 0.001 {
+				t.Errorf("Expected %f found %f. Diff: %f", tt.expectedAngle, radToDeg(actualAngle), math.Abs(radToDeg(actualAngle)-tt.expectedAngle))
+			}
+		})
+	}
+}
+
+func radToDeg(r float64) float64 {
+	return r * (180 / math.Pi)
 }
