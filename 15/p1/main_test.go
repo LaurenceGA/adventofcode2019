@@ -4,7 +4,7 @@ import (
 	"strconv"
 	"testing"
 
-	day13 "github.com/LaurenceGA/adventofcode2019/13"
+	day15 "github.com/LaurenceGA/adventofcode2019/15"
 )
 
 func TestProgram(t *testing.T) {
@@ -139,7 +139,7 @@ func TestProgram(t *testing.T) {
 	for _, tt := range cases {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
-			prog := day13.ProcessInput(tt.prog)
+			prog := day15.ProcessInput(tt.prog)
 
 			inputChannel := make(chan int, len(tt.input))
 			for _, i := range tt.input {

@@ -1,11 +1,12 @@
 package main
 
 import (
+	"container/list"
 	"fmt"
 	"math"
 	"time"
 
-	day13 "github.com/LaurenceGA/adventofcode2019/13"
+	day15 "github.com/LaurenceGA/adventofcode2019/15"
 )
 
 type parameterMode int
@@ -34,20 +35,239 @@ const (
 func main() {
 	start := time.Now()
 
-	program := day13.GetInputProgram()
+	program := day15.GetInputProgram()
 
-	in := make(chan int)
-	out := make(chan int)
-	game := NewComputer(program, in, out)
-	go game.Run()
+	in := make(chan int, 1)
+	out := make(chan int, 1)
+	comp := NewComputer(program, in, out)
+	go comp.Run()
 
-	//fmt.Println(sum)
+	distToTarget(in, out)
 
 	fmt.Println("Time elapsed:", time.Since(start))
 }
 
+type movementDirection int
+
+const (
+	north = iota + 1
+	south
+	west
+	east
+)
+
+func (m movementDirection) String() string {
+	switch m {
+	case north:
+		return "north"
+	case south:
+		return "south"
+	case west:
+		return "west"
+	case east:
+		return "east"
+	default:
+		return "unknown"
+	}
+}
+
+type robotStatus int
+
+const (
+	hitWall = iota
+	movedToEmptySpace
+	movedToTarget
+)
+
+func (r robotStatus) String() string {
+	switch r {
+	case hitWall:
+		return "hit wall"
+	case movedToEmptySpace:
+		return "moved to empty space"
+	case movedToTarget:
+		return "moved to target!"
+	default:
+		return "unknown"
+	}
+}
+
 type coord struct {
 	X, Y int
+}
+
+func distToTarget(in chan<- int, out <-chan int) {
+	curPos := coord{
+		X: 0,
+		Y: 0,
+	}
+	directionsToTry := list.New()
+	directionsToTry.PushFront(curPos)
+	var currentPath []movementDirection
+	visited := make(map[coord]struct{})
+	visited[curPos] = struct{}{}
+	for directionsToTry.Len() != 0 {
+		elm := directionsToTry.Front()
+		coordToTry := elm.Value.(coord)
+		fmt.Println(coordToTry)
+
+		for coordToTry != curPos && !isNeighbour(curPos, coordToTry) {
+			fmt.Println("Unwinding...")
+			if currentPath == nil {
+				panic("Trying to unwind, but curPath is nil")
+			}
+			movingIn := oppositeDirection(currentPath[0])
+			in <- int(movingIn)
+			s := <-out
+			if s != movedToEmptySpace {
+				panic("failed unwinding")
+			}
+			curPos = coordInDirection(curPos, movingIn)
+			currentPath = currentPath[1:]
+		}
+		if curPos != coordToTry {
+			// We are now next to the coordToTry
+			actualDir := coordDirection(curPos, coordToTry)
+			in <- int(actualDir)
+			status := <-out
+			currentPath = append([]movementDirection{actualDir}, currentPath...)
+			visited[coordToTry] = struct{}{}
+			fmt.Printf("Moved %v, status is %v\n", actualDir, status)
+			switch status {
+			case movedToEmptySpace:
+				curPos = coordToTry
+			case movedToTarget:
+				fmt.Println("!!")
+				fmt.Println(len(currentPath))
+				return
+			case hitWall:
+				fmt.Println("Hit a wall...")
+			}
+		}
+
+		possiblePositions := surroundingPositions(in, out, coordToTry)
+		fmt.Println(possiblePositions)
+		for _, p := range possiblePositions {
+			if _, ok := visited[p]; !ok {
+				fmt.Println("Adding", p)
+				directionsToTry.PushFront(p)
+			}
+		}
+
+		directionsToTry.Remove(elm)
+	}
+}
+
+func coordDirection(from, to coord) movementDirection {
+	if to == northCoord(from) {
+		return north
+	}
+	if to == southCoord(from) {
+		return south
+	}
+	if to == westCoord(from) {
+		return west
+	}
+	if to == eastCoord(from) {
+		return east
+	}
+
+	panic("Don't know coord direction!")
+}
+
+func isNeighbour(a, b coord) bool {
+	if (b.X == a.X+1 && a.Y == b.Y) ||
+		(b.X == a.X-1 && a.Y == b.Y) ||
+		(b.Y == a.Y+1 && a.X == b.X) ||
+		(b.Y == a.Y-1 && a.X == b.X) {
+		return true
+	}
+	return false
+}
+
+func surroundingPositions(in chan<- int, out <-chan int, curPos coord) []coord {
+	fmt.Println("Checking directions...")
+	var positions []coord
+	if dirIsValid(in, out, north) {
+		positions = append(positions, northCoord(curPos))
+	}
+	if dirIsValid(in, out, south) {
+		positions = append(positions, southCoord(curPos))
+	}
+	if dirIsValid(in, out, west) {
+		positions = append(positions, westCoord(curPos))
+	}
+	if dirIsValid(in, out, east) {
+		positions = append(positions, eastCoord(curPos))
+	}
+	fmt.Println("Checked")
+	return positions
+}
+
+func coordInDirection(start coord, dir movementDirection) coord {
+	switch dir {
+	case north:
+		return northCoord(start)
+	case south:
+		return southCoord(start)
+	case west:
+		return westCoord(start)
+	case east:
+		return eastCoord(start)
+	}
+
+	panic("Dunno coord in direction")
+}
+
+func northCoord(curPos coord) coord {
+	return coord{X: curPos.X, Y: curPos.Y - 1}
+}
+
+func southCoord(curPos coord) coord {
+	return coord{X: curPos.X, Y: curPos.Y + 1}
+}
+
+func westCoord(curPos coord) coord {
+	return coord{X: curPos.X - 1, Y: curPos.Y}
+}
+
+func eastCoord(curPos coord) coord {
+	return coord{X: curPos.X + 1, Y: curPos.Y}
+}
+
+func dirIsValid(in chan<- int, out <-chan int, direction movementDirection) bool {
+	in <- int(direction)
+	status := robotStatus(<-out)
+	fmt.Println("Moved", direction, "status", status)
+	switch status {
+	case hitWall:
+		return false
+	default:
+		// move back
+		fmt.Println("Moving back")
+		in <- int(oppositeDirection(direction))
+		newStatus := <-out
+		if newStatus != movedToEmptySpace {
+			panic("Fail trying to return to previous spot")
+		}
+		fmt.Println("Moved", oppositeDirection(direction), "status", robotStatus(newStatus))
+		return true
+	}
+}
+
+func oppositeDirection(direction movementDirection) movementDirection {
+	switch direction {
+	case north:
+		return south
+	case south:
+		return north
+	case west:
+		return east
+	case east:
+		return west
+	default:
+		panic(fmt.Sprintf("Invalid direction %v", direction))
+	}
 }
 
 // Intcode is an int code computer
