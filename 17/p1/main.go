@@ -31,6 +31,22 @@ const (
 	halt               opcode = 99
 )
 
+type tileID int
+
+const (
+	scaffold tileID = 35
+	empty    tileID = 46
+	newline  tileID = 10
+)
+
+type coord struct {
+	X, Y int
+}
+
+func (c coord) alignmentParam() int {
+	return c.X * c.Y
+}
+
 func main() {
 	start := time.Now()
 
@@ -41,9 +57,47 @@ func main() {
 	comp := NewComputer(program, in, out)
 	go comp.Run()
 
+	var scaffolding [][]int
+	y := 0
+	scaffolding = append(scaffolding, []int{})
 	for c := range out {
-		fmt.Print(string(c))
+		if tileID(c) == newline {
+			y++
+			scaffolding = append(scaffolding, []int{})
+			continue
+		}
+		scaffolding[y] = append(scaffolding[y], c)
 	}
+	scaffolding = scaffolding[:len(scaffolding)-2]
+
+	for _, row := range scaffolding {
+		for _, c := range row {
+			fmt.Print(string(c))
+		}
+		fmt.Println()
+	}
+
+	var intersections []coord
+	for y, row := range scaffolding {
+		for x, c := range row {
+			if tileID(c) == scaffold {
+				if ((x+1) < len(row) && tileID(scaffolding[y][x+1]) == scaffold) &&
+					((x-1) >= 0 && tileID(scaffolding[y][x-1]) == scaffold) &&
+					((y+1) < len(scaffolding) && tileID(scaffolding[y+1][x]) == scaffold) &&
+					((y-1) >= 0 && tileID(scaffolding[y-1][x]) == scaffold) {
+					intersections = append(intersections, coord{X: x, Y: y})
+				}
+			}
+		}
+	}
+
+	fmt.Println(intersections)
+	sum := 0
+	for _, i := range intersections {
+		sum += i.alignmentParam()
+	}
+
+	fmt.Println(sum)
 
 	fmt.Println("Time elapsed:", time.Since(start))
 }
