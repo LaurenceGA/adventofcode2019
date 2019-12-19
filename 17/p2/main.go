@@ -74,6 +74,9 @@ func main() {
 	fmt.Println(path)
 	expandedPath := expandPath(path)
 	fmt.Println(expandedPath)
+	fmt.Println(findFactors(expandedPath))
+
+	fmt.Println("Time elapsed:", time.Since(start))
 	return
 
 	// Main:
@@ -167,6 +170,60 @@ func main() {
 	<-comp.done
 
 	fmt.Println("Time elapsed:", time.Since(start))
+}
+
+func findFactors(wholeList []string) [][]string {
+	wholeStr := strings.Join(wholeList, "")
+	maxLen := 60
+	for iSize := 19; iSize < maxLen; iSize++ {
+		for jSize := 20; jSize < maxLen; jSize++ {
+			// fmt.Println(iSize, jSize)
+			for kSize := 30; kSize < maxLen; kSize++ {
+				fmt.Println(iSize, jSize, kSize)
+				// for i := 0; i < len(wholeList)-iSize-jSize-kSize; i++ {
+				for j := iSize; j < len(wholeList)-kSize-jSize; j++ {
+					for k := j + jSize; k < len(wholeList)-kSize; k++ {
+						ws := wholeStr
+
+						iStr := ws[0 : 0+iSize]
+						jStr := ws[j : j+jSize]
+						kStr := ws[k : k+kSize]
+						ws = strings.ReplaceAll(ws, iStr, "A")
+						ws = strings.ReplaceAll(ws, jStr, "B")
+						ws = strings.ReplaceAll(ws, kStr, "C")
+						for _, c := range ws {
+							if c != 'A' && c != 'B' && c != 'D' {
+								goto fail
+							}
+						}
+						fmt.Println(ws)
+						fmt.Println(len(wholeList), len(ws))
+						fmt.Println(0, iSize, iStr)
+						fmt.Println(j, jSize, jStr)
+						fmt.Println(k, kSize, kStr)
+					fail:
+					}
+				}
+				// }
+			}
+		}
+	}
+
+	return [][]string{}
+}
+
+func sliceEqual(a, b []string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+
+	for i, aVal := range a {
+		if aVal != b[i] {
+			return false
+		}
+	}
+
+	return true
 }
 
 func expandPath(path string) []string {
