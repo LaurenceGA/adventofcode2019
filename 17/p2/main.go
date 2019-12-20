@@ -174,33 +174,39 @@ func main() {
 
 func findFactors(wholeList []string) [][]string {
 	wholeStr := strings.Join(wholeList, "")
-	maxLen := 60
-	for iSize := 19; iSize < maxLen; iSize++ {
-		for jSize := 20; jSize < maxLen; jSize++ {
-			// fmt.Println(iSize, jSize)
+	maxLen := 100
+	for iSize := 1; iSize < maxLen; iSize++ {
+		for jSize := 1; jSize < maxLen; jSize++ {
+			fmt.Println(iSize, jSize)
 			for kSize := 30; kSize < maxLen; kSize++ {
-				fmt.Println(iSize, jSize, kSize)
+				ws := wholeStr
+				iStr := ws[0 : 0+iSize]
+				wsA := strings.ReplaceAll(ws, iStr, "A")
 				// for i := 0; i < len(wholeList)-iSize-jSize-kSize; i++ {
 				for j := iSize; j < len(wholeList)-kSize-jSize; j++ {
+					jStr := ws[j : j+jSize]
+					if strings.Contains(jStr, "A") {
+						continue
+					}
+					wsB := strings.ReplaceAll(wsA, jStr, "B")
 					for k := j + jSize; k < len(wholeList)-kSize; k++ {
-						ws := wholeStr
-
-						iStr := ws[0 : 0+iSize]
-						jStr := ws[j : j+jSize]
 						kStr := ws[k : k+kSize]
-						ws = strings.ReplaceAll(ws, iStr, "A")
-						ws = strings.ReplaceAll(ws, jStr, "B")
-						ws = strings.ReplaceAll(ws, kStr, "C")
-						for _, c := range ws {
+						if strings.Contains(jStr, "B") {
+							continue
+						}
+						wsC := strings.ReplaceAll(wsB, kStr, "C")
+
+						for _, c := range wsC {
 							if c != 'A' && c != 'B' && c != 'D' {
 								goto fail
 							}
 						}
-						fmt.Println(ws)
-						fmt.Println(len(wholeList), len(ws))
+						fmt.Println(wsC)
+						fmt.Println(len(wholeList), len(wsC))
 						fmt.Println(0, iSize, iStr)
 						fmt.Println(j, jSize, jStr)
 						fmt.Println(k, kSize, kStr)
+						return [][]string{}
 					fail:
 					}
 				}
