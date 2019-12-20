@@ -74,6 +74,7 @@ func main() {
 	fmt.Println(path)
 	expandedPath := expandPath(path)
 	fmt.Println(expandedPath)
+	//splitPath := strings.Split(path, ",")
 	fmt.Println(findFactors(expandedPath))
 
 	fmt.Println("Time elapsed:", time.Since(start))
@@ -174,23 +175,23 @@ func main() {
 
 func findFactors(wholeList []string) [][]string {
 	wholeStr := strings.Join(wholeList, "")
-	maxLen := 100
+	maxLen := 30
 	for iSize := 1; iSize < maxLen; iSize++ {
 		for jSize := 1; jSize < maxLen; jSize++ {
 			fmt.Println(iSize, jSize)
-			for kSize := 30; kSize < maxLen; kSize++ {
+			for kSize := 1; kSize < maxLen; kSize++ {
 				ws := wholeStr
 				iStr := ws[0 : 0+iSize]
 				wsA := strings.ReplaceAll(ws, iStr, "A")
 				// for i := 0; i < len(wholeList)-iSize-jSize-kSize; i++ {
-				for j := iSize; j < len(wholeList)-kSize-jSize; j++ {
-					jStr := ws[j : j+jSize]
+				for j := iSize; j < len(wsA)-kSize-jSize; j++ {
+					jStr := wsA[j : j+jSize]
 					if strings.Contains(jStr, "A") {
 						continue
 					}
 					wsB := strings.ReplaceAll(wsA, jStr, "B")
-					for k := j + jSize; k < len(wholeList)-kSize; k++ {
-						kStr := ws[k : k+kSize]
+					for k := j + jSize; k < len(wsB)-kSize; k++ {
+						kStr := wsB[k : k+kSize]
 						if strings.Contains(jStr, "B") {
 							continue
 						}
@@ -234,7 +235,7 @@ func sliceEqual(a, b []string) bool {
 
 func expandPath(path string) []string {
 	splitPath := strings.Split(path, ",")
-	splitPath = splitPath[:len(splitPath)-1]
+	//splitPath = splitPath[:len(splitPath)-1]
 	fmt.Println(splitPath)
 	var newPath []string
 	for _, p := range splitPath {
@@ -302,7 +303,8 @@ func getPrimaryPath(scaffolding [][]int) string {
 		}
 	}
 
-	return sb.String()
+	pathStr := sb.String()
+	return pathStr[:len(pathStr)-1]
 }
 
 func isScaffold(c coord, scaffolding [][]int) bool {
